@@ -5,8 +5,9 @@ Pour se faire, la méthode des graphs de De Bruijn sera utilisée.
 
 ### Import des modules
 import argparse
-#import os
+import os
 import networkx as nx
+import statistics
 
 ### Liste des fonctions.
 def read_fastq(fichier_fastq):
@@ -56,7 +57,7 @@ def build_graph(dico_kmers):
 def get_starting_nodes(graphique):
     """Fonction qui permet de relever les noeuds d'entrée"""
     noeuds_entree = []
-    for noeud in graphique.nodes :
+    for noeud in graphique.nodes:
         if len(list(graphique.predecessors(noeud)))==0:
             noeuds_entree.append(noeud)
     return noeuds_entree
@@ -64,33 +65,44 @@ def get_starting_nodes(graphique):
 def get_sink_nodes(graphique):
     """Fonction qui permet de relever les noeuds de sortie"""
     noeuds_sortie = []
-    for noeud in graphique.nodes :
-        if len(list(graphique.successors(noeud)))==0:
+    for noeud in graphique.nodes:
+        if len(list(graphique.successors(noeud))) == 0:
             noeuds_sortie.append(noeud)
     return noeuds_sortie
 
 def get_contigs(graphique, debuts, fins):
     """Fonction permettant de générer une liste de tulpes
     contenant les contigs associés à leur taille."""
-    contigs=[]
+    contigs = []
     for noeud_depart in debuts:
-        for noeud_fin in fins :
+        for noeud_fin in fins:
             for path in nx.all_simple_paths(graphique,\
             source=noeud_depart, target = noeud_fin):
-                prep_contig=path
-                contig_ecrit=[]
+                prep_contig = path
+                contig_ecrit = []
                 contig_ecrit.append(prep_contig[0])
-                for i in range(1,len(prep_contig)):
+                for i in range(1, len(prep_contig)):
                     contig_ecrit.append(prep_contig[i][-1:])
-                contig_ecrit="".join(contig_ecrit)
-                contigs.append((contig_ecrit,len(contig_ecrit)))
+                contig_ecrit = "".join(contig_ecrit)
+                contigs.append((contig_ecrit, len(contig_ecrit)))
     return contigs
 
-def save_contigs(liste_contigs, nom_fichier):
-    pass
+def fill(text, width=80):
+    """Split text with a line return to respect fasta format"""
+    return os.linesep.join(text[i:i+width] for i in range(0, len(text), width))
 
-def std():
-    pass
+def save_contigs(liste_contigs, nom_fichier):
+    with open(nom_fichier, "w") as fichier_sortie:
+        numero = 0
+        for contigs in liste_contigs:
+            fichier_sortie.write(">contig_{0} len={1}\n".format(numero, contigs[1]))
+            fichier_sortie.write("{0}\n".format(fill(contigs[0])))
+            numero += 1
+
+def std(liste_valeurs):
+    """Calcul l'écart-type de la liste de valeurs"""
+    return statistics.stdev(liste_valeurs)
+        
 
 def path_average_weight():
     pass
@@ -149,10 +161,10 @@ def main():
     fins = get_sink_nodes(graphique)
     #print(fins)
 
-    liste_contigs=get_contigs(graphique, debuts, fins)
+    liste_contigs = get_contigs(graphique, debuts, fins)
     #print(liste_contigs)
     
-    
+    save_contigs(liste_contigs, "Export_contigs.fna")
         
 
 ###Si fichier lancé on execute la boucle main.
