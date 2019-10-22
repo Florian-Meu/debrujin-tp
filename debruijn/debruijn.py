@@ -107,7 +107,10 @@ def std(liste_valeurs):
 def path_average_weight():
     pass
 
-def remove_paths(graph, delete_entry_node=False, delete_sink_node=False):
+def remove_paths(graph, liste_chemins,delete_entry_node=False, delete_sink_node=False):
+    """Fonction qui va permettre de nettoyer le graphique de chemins
+    indésirables."""
+    
     pass
 
 def select_best_path():
