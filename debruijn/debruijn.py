@@ -53,11 +53,21 @@ def build_graph(dico_kmers):
     return graphique
 
 
-def get_starting_nodes():
-    pass
+def get_starting_nodes(graphique):
+    """Fonction qui permet de relever les noeuds d'entrée"""
+    noeuds_entree = []
+    for noeud in graphique.nodes :
+        if len(list(graphique.predecessors(noeud)))==0:
+            noeuds_entree.append(noeud)
+    return noeuds_entree
 
-def get_sink_nodes():
-    pass
+def get_sink_nodes(graphique):
+    """Fonction qui permet de relever les noeuds de sortie"""
+    noeuds_sortie = []
+    for noeud in graphique.nodes :
+        if len(list(graphique.successors(noeud)))==0:
+            noeuds_sortie.append(noeud)
+    return noeuds_sortie
 
 def get_contigs():
     pass
@@ -118,6 +128,13 @@ def main():
     #print(occurrence_kmers)
 
     graphique = build_graph(occurrence_kmers)
+    
+    debuts = get_starting_nodes(graphique)
+    #print(debuts)
+    
+    fins = get_sink_nodes(graphique)
+    #print(fins)
+    
 
 ###Si fichier lancé on execute la boucle main.
 if __name__ == "__main__":
