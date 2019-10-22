@@ -6,8 +6,8 @@ Pour se faire, la méthode des graphs de De Bruijn sera utilisée.
 ### Import des modules
 import argparse
 import os
-import networkx as nx
 import statistics
+import networkx as nx
 
 ### Liste des fonctions.
 def read_fastq(fichier_fastq):
@@ -102,19 +102,29 @@ def save_contigs(liste_contigs, nom_fichier):
 def std(liste_valeurs):
     """Calcul l'écart-type de la liste de valeurs"""
     return statistics.stdev(liste_valeurs)
-        
+
 
 def path_average_weight():
     pass
 
-def remove_paths():
+def remove_paths(graph, delete_entry_node=False, delete_sink_node=False):
     pass
 
 def select_best_path():
     pass
 
-def solve_bubble():
-    pass
+def solve_bubble(graphique):
+    """Fonction permettant de nettoyer le graphique de tous
+    les éventuels noeuds présents dans le graphique."""
+    debuts = get_starting_nodes(graphique)
+    fins = get_sink_nodes(graphique)
+    ensemble_chemins = get_contigs(graphique)
+    poids_moyen=[]
+
+    for chemin in ensemble_chemins:
+        poids_moyen.append(path_average_weight(graphique,chemin))
+
+    ecarttype = std(poids_moyen)
 
 def simplify_bubbles():
     pass
@@ -163,9 +173,9 @@ def main():
 
     liste_contigs = get_contigs(graphique, debuts, fins)
     #print(liste_contigs)
-    
+
     save_contigs(liste_contigs, "Export_contigs.fna")
-        
+
 
 ###Si fichier lancé on execute la boucle main.
 if __name__ == "__main__":
