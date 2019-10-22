@@ -69,10 +69,24 @@ def get_sink_nodes(graphique):
             noeuds_sortie.append(noeud)
     return noeuds_sortie
 
-def get_contigs():
-    pass
+def get_contigs(graphique, debuts, fins):
+    """Fonction permettant de générer une liste de tulpes
+    contenant les contigs associés à leur taille."""
+    contigs=[]
+    for noeud_depart in debuts:
+        for noeud_fin in fins :
+            for path in nx.all_simple_paths(graphique,\
+            source=noeud_depart, target = noeud_fin):
+                prep_contig=path
+                contig_ecrit=[]
+                contig_ecrit.append(prep_contig[0])
+                for i in range(1,len(prep_contig)):
+                    contig_ecrit.append(prep_contig[i][-1:])
+                contig_ecrit="".join(contig_ecrit)
+                contigs.append((contig_ecrit,len(contig_ecrit)))
+    return contigs
 
-def save_contigs():
+def save_contigs(liste_contigs, nom_fichier):
     pass
 
 def std():
@@ -128,13 +142,18 @@ def main():
     #print(occurrence_kmers)
 
     graphique = build_graph(occurrence_kmers)
-    
+
     debuts = get_starting_nodes(graphique)
     #print(debuts)
-    
+
     fins = get_sink_nodes(graphique)
     #print(fins)
+
+    liste_contigs=get_contigs(graphique, debuts, fins)
+    #print(liste_contigs)
     
+    
+        
 
 ###Si fichier lancé on execute la boucle main.
 if __name__ == "__main__":
