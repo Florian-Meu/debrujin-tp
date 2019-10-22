@@ -1,6 +1,6 @@
 """Ce programme va permettre d'assembler des reads.
 
-Pour se faire, la méthode des graphs de Debruijn sera utilisée.
+Pour se faire, la méthode des graphs de De Bruijn sera utilisée.
 """
 
 ### Import des modules
@@ -47,11 +47,11 @@ def build_kmer_dict(fichier_fastq, taille_kmer):
 def build_graph(dico_kmers):
     """Cette fonction va permettre de créer un digraph qui permettra,
     à terme, d'aligner les reads"""
-    graphique=nx.DiGraph()
-    for kmer,poids in dico_kmers.items() :
+    graphique = nx.DiGraph()
+    for kmer, poids in dico_kmers.items():
         graphique.add_edge(kmer[:-1], kmer[1:], weight=poids)
-    return graphique       
-    
+    return graphique
+
 
 def get_starting_nodes():
     pass
@@ -96,7 +96,7 @@ def main():
     """La fonction main() correspond à ce qui sera executé si le code
     source est lancé"""
     parser = argparse.ArgumentParser(prog='debruij.py',\
-    description='Assembleur de séquence basé sur la méthode de Debruij.')
+    description='Assembleur de séquence basé sur la méthode de De Bruij.')
     parser.add_argument('--i', type = str, help='fichier fastq, single end')
     parser.add_argument('--k', type = int, default = 21,\
     help='taille des kmer (optionnel - par defaut:21)')
