@@ -6,13 +6,14 @@ Pour se faire, la méthode des graphs de Debruijn sera utilisée.
 ### Import des modules
 import argparse
 #import os
+import networkx as nx
 
 ### Liste des fonctions.
 def read_fastq(fichier_fastq):
-    """Cette fonction a pour but de récupérer les reads contenus dans un fichier Fastq."""
+    """Cette fonction a pour but de récupérer les reads contenus
+    dans un fichier Fastq."""
     lire = False
-    chemin = "".join(["../data/", fichier_fastq])
-    with open(chemin, "r") as fastq:
+    with open(fichier_fastq, "r") as fastq:
         for ligne in fastq:
             if ligne.startswith("@"):
                 lire = True
@@ -20,12 +21,12 @@ def read_fastq(fichier_fastq):
                 lire = False
             else:
                 if lire:
-                    yield ligne
+                    yield ligne[:-1]
 
 def cut_kmer(sequence, taille_kmer):
     """Cette fonction va permettre d'obtenir des k-mers de taille désirée à
     partir d'un read renseigné."""
-    for indice in range(len(sequence[:-taille_kmer])):
+    for indice in range(len(sequence[:-taille_kmer+1])):
         yield sequence[indice:indice+taille_kmer]
 
 def build_kmer_dict(fichier_fastq, taille_kmer):
@@ -43,9 +44,57 @@ def build_kmer_dict(fichier_fastq, taille_kmer):
                 occurrence_kmers[kmer] = 1
     return occurrence_kmers
 
+def build_graph(dico_kmers):
+    """Cette fonction va permettre de créer un digraph qui permettra,
+    à terme, d'aligner les reads"""
+    graphique=nx.DiGraph()
+    for kmer,poids in dico_kmers.items() :
+        graphique.add_edge(kmer[:-1], kmer[1:], weight=poids)
+    return graphique       
+    
+
+def get_starting_nodes():
+    pass
+
+def get_sink_nodes():
+    pass
+
+def get_contigs():
+    pass
+
+def save_contigs():
+    pass
+
+def std():
+    pass
+
+def path_average_weight():
+    pass
+
+def remove_paths():
+    pass
+
+def select_best_path():
+    pass
+
+def solve_bubble():
+    pass
+
+def simplify_bubbles():
+    pass
+
+def solve_entry_tips():
+    pass
+
+def solve_out_tips():
+    pass
+
+
+
 ###Définition de la fonction Main
 def main():
-    """La fonction main() correspond à ce qui sera executé si le code source est lancé"""
+    """La fonction main() correspond à ce qui sera executé si le code
+    source est lancé"""
     parser = argparse.ArgumentParser(prog='debruij.py',\
     description='Assembleur de séquence basé sur la méthode de Debruij.')
     parser.add_argument('--i', type = str, help='fichier fastq, single end')
@@ -67,6 +116,8 @@ def main():
 
     occurrence_kmers = build_kmer_dict(args.i, args.k)
     #print(occurrence_kmers)
+
+    graphique = build_graph(occurrence_kmers)
 
 ###Si fichier lancé on execute la boucle main.
 if __name__ == "__main__":
