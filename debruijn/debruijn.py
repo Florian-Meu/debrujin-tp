@@ -9,6 +9,7 @@ Pour se faire, la méthode des graphs de De Bruijn sera utilisée.
 import argparse
 import os
 import statistics
+import matplotlib
 import networkx as nx
 
 ### Liste des fonctions.
@@ -144,7 +145,7 @@ def remove_paths(graph, liste_chemins, delete_entry_node=False, delete_sink_node
 def select_best_path(graph, ensemble_chemins, ensemble_longueurs, poids_moyen, delete_entry_node=False, delete_sink_node=False):
     """Fonction qui va permettre d'identifier le meilleur chemin."""
     while len(ensemble_chemins) > 1 :
-        print(ensemble_chemins)
+        #print("ensemble_chemins = {}".format(ensemble_chemins))
         a_retirer = []
         taille_max=max(poids_moyen)
         chemin_fort_poids = []
@@ -155,8 +156,8 @@ def select_best_path(graph, ensemble_chemins, ensemble_longueurs, poids_moyen, d
             ensemble_chemins.remove(chemin)
         a_retirer = ensemble_chemins + a_retirer
         if len(chemin_fort_poids)==1:
-            print(chemin_fort_poids)
-            graph = remove_paths(graph, a_retirer, delete_entry_node=delete_entry_node, delete_sink_node=delete_sink_node)
+            #print("chemin_fort_poids = {}".format(chemin_fort_poids))
+            graph = remove_paths(graph, a_retirer, delete_entry_node, delete_sink_node)
         else :
             longueur_max = max(ensemble_longueurs)
             grands_chemins = []
@@ -167,16 +168,16 @@ def select_best_path(graph, ensemble_chemins, ensemble_longueurs, poids_moyen, d
                 chemin_fort_poids.remove(chemin)
             a_retirer = chemin_fort_poids + a_retirer
             if len(grands_chemins)==1:
-                print(grands_chemins)
-                graph = remove_paths(graph, a_retirer, delete_entry_node=delete_entry_node, delete_sink_node=delete_sink_node)
+                #print("grands_chemins = {}".format(grands_chemins))
+                graph = remove_paths(graph, a_retirer, delete_entry_node, delete_sink_node)
             else :
                 random.seed(9001)
                 choix=random.randint(0,len(grands_chemins))
                 ensemble_chemins=grands_chemins[choix]
                 grands_chemins.remove(ensemble_chemins)
                 a_retirer = grands_chemins + a_retirer
-                print(ensemble_chemins)
-                graph = remove_paths(graph, a_retirer, delete_entry_node=delete_entry_node, delete_sink_node=delete_sink_node)
+                #print("ensemble_chemins = {}".format(ensemble_chemins))
+                graph = remove_paths(graph, a_retirer, delete_entry_node, delete_sink_node)
     return graph
 
 def find_bubbles(graphique):
@@ -205,7 +206,7 @@ def solve_bubble(graphique,debut,fin):
     la bulle contenue entre les deux bornes."""
     ensemble_chemins = []
     for path in nx.all_simple_paths(graphique,\
-            source=debut, target = fin):
+            source = debut, target = fin):
                 ensemble_chemins.append(path)
     poids_moyen = []
     for chemin in ensemble_chemins:
@@ -228,13 +229,53 @@ def simplify_bubbles(graphique):
 
     return graphique
 
-def solve_entry_tips():
-    pass
+def solve_entry_tips(graphique, entrees):
+    """Fonction qui permet d'enlever les entrées indésirables"""
+    #établissement des bornes de chemins d'entrée.
+    bornes_initiales = []
+    for noeuds_entree in entrees:
+        ensemble_noeuds = list(graphique.nodes)
+        for i in range(len(ensemble_noeuds)):
+            if len(list(graphique.predecessors(ensemble_noeuds[i])))>1:
+                fin = ensemble_noeuds[i]
+        bornes_initiales.append([noeuds_entree,fin])
+    #Définitions des chemins et valeurs associées
+    ensemble_chemins = []
+    poids_moyen = []
+    ensemble_longueurs = []
+    for borne in bornes_initiales:
+        for path in nx.all_simple_paths(graphique,\
+                source = borne[0], target = borne[1]):
+            ensemble_chemins.append(path)
+            poids_moyen.append(path_average_weight(graphique,path))
+            ensemble_longueurs.append(len(path))
+    #Nettoyage du graphique
+    graphique = select_best_path(graphique, ensemble_chemins, ensemble_longueurs, poids_moyen, delete_entry_node=True, delete_sink_node=False)
+    return graphique
 
-def solve_out_tips():
-    pass
-
-
+def solve_out_tips(graphique, sorties):
+    """Fonction qui permet d'enlever les entrées indésirables"""
+    #établissement des bornes de chemins de sortie.
+    bornes_initiales = []
+    for noeuds_sortie in sorties:
+        ensemble_noeuds = list(graphique.nodes)
+        for i in range(len(ensemble_noeuds)):
+            if len(list(graphique.successors(ensemble_noeuds[i])))>1:
+                debut = ensemble_noeuds[i]
+        bornes_initiales.append([debut,noeuds_sortie])
+    #Définitions des chemins et valeurs associées
+    ensemble_chemins = []
+    poids_moyen = []
+    ensemble_longueurs = []
+    for borne in bornes_initiales:
+        for path in nx.all_simple_paths(graphique,\
+                source = borne[0], target = borne[1]):
+            ensemble_chemins.append(path)
+            poids_moyen.append(path_average_weight(graphique,path))
+            ensemble_longueurs.append(len(path))
+    #Nettoyage du graphique
+    graphique = select_best_path(graphique, ensemble_chemins, ensemble_longueurs, poids_moyen, delete_entry_node = False, delete_sink_node = True)
+    return graphique
 
 ###Définition de la fonction Main
 def main():
@@ -245,7 +286,10 @@ def main():
     parser.add_argument('--i', type = str, help='fichier fastq, single end')
     parser.add_argument('--k', type = int, default = 21,\
     help='taille des kmer (optionnel - par defaut : 21)')
-    parser.add_argument('--r', type = str, default='')
+    parser.add_argument('--r', type = str, default='',\
+    help='genome de reference (optionnel)')
+    parser.add_argument('--o', type = str, default='',\
+    help='fichier contig (optionnel)')
     args = parser.parse_args()
 
     liste_reads = []
@@ -274,8 +318,19 @@ def main():
     #print(liste_contigs)
 
     save_contigs(liste_contigs, "Export_contigs.fna")
-    
+
     graphique = simplify_bubbles(graphique)
+
+    #recherche des entrées indésirables.
+    noeuds_entree = get_starting_nodes(graphique)
+    if len(noeuds_entree)>0:
+        graphique = solve_entry_tips(graphique, noeuds_entree)
+    
+    noeuds_terminaux = get_sink_nodes(graphique)
+    if len(noeuds_terminaux)>0:
+        graphique = solve_out_tips(graphique, noeuds_terminaux)
+
+    #nx.draw_networkx(graphique)
 
 ###Si fichier lancé on execute la boucle main.
 if __name__ == "__main__":
