@@ -381,6 +381,7 @@ def main():
     #for noeud in graphique.nodes:
     #    if len(list(graphique.predecessors(noeud))) > 1:
     #        print("Il y a un petiot ici {}".format(noeud))
+    #        graphique = simplify_bubbles(graphique)
     print("\n\n\nIl reste {} noeuds d'entrée.".format(len(noeuds_entree)))
     print("Il reste {} noeuds de sortie.".format(len(noeuds_terminaux)))
     print("Cela amène à {} contigs généré(s).".format(len(final_contig)))
