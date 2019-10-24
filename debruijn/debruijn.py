@@ -17,7 +17,8 @@ import networkx as nx
 ### Liste des fonctions.
 def read_fastq(fichier_fastq):
     """Cette fonction a pour but de récupérer les reads contenus
-    dans un fichier Fastq."""
+    dans un fichier Fastq.
+    """
     lire = False
     with open(fichier_fastq, "r") as fastq:
         for ligne in fastq:
@@ -31,13 +32,15 @@ def read_fastq(fichier_fastq):
 
 def cut_kmer(sequence, taille_kmer):
     """Cette fonction va permettre d'obtenir des k-mers de taille désirée à
-    partir d'un read renseigné."""
+    partir d'un read renseigné.
+    """
     for indice in range(len(sequence[:-taille_kmer+1])):
         yield sequence[indice:indice+taille_kmer]
 
 def build_kmer_dict(fichier_fastq, taille_kmer):
     """Cette fonction va permettre de calculer les occurrences de
-    chaque Kmers contenus au sein des reads issus du fastq"""
+    chaque Kmers contenus au sein des reads issus du fastq.
+    """
     liste_reads = []
     for sequence in read_fastq(fichier_fastq):
         liste_reads.append(sequence)
@@ -52,36 +55,38 @@ def build_kmer_dict(fichier_fastq, taille_kmer):
 
 def build_graph(dico_kmers):
     """Cette fonction va permettre de créer un digraph qui permettra,
-    à terme, d'aligner les reads"""
-    graphique = nx.DiGraph()
+    à terme, d'aligner les reads.
+    """
+    graph = nx.DiGraph()
     for kmer, poids in dico_kmers.items():
-        graphique.add_edge(kmer[:-1], kmer[1:], weight=poids)
-    return graphique
+        graph.add_edge(kmer[:-1], kmer[1:], weight=poids)
+    return graph
 
 
-def get_starting_nodes(graphique):
-    """Fonction qui permet de relever les noeuds d'entrée"""
+def get_starting_nodes(graph):
+    """Fonction qui permet de relever les noeuds d'entrée."""
     noeuds_entree = []
-    for noeud in graphique.nodes:
-        if len(list(graphique.predecessors(noeud))) == 0:
+    for noeud in graph.nodes:
+        if len(list(graph.predecessors(noeud))) == 0:
             noeuds_entree.append(noeud)
     return noeuds_entree
 
-def get_sink_nodes(graphique):
-    """Fonction qui permet de relever les noeuds de sortie"""
+def get_sink_nodes(graph):
+    """Fonction qui permet de relever les noeuds de sortie."""
     noeuds_sortie = []
-    for noeud in graphique.nodes:
-        if len(list(graphique.successors(noeud))) == 0:
+    for noeud in graph.nodes:
+        if len(list(graph.successors(noeud))) == 0:
             noeuds_sortie.append(noeud)
     return noeuds_sortie
 
-def get_contigs(graphique, debuts, fins):
+def get_contigs(graph, debuts, fins):
     """Fonction permettant de générer une liste de tulpes
-    contenant les contigs associés à leur taille."""
+    contenant les contigs associés à leur taille.
+    """
     contigs = []
     for noeud_depart in debuts:
         for noeud_fin in fins:
-            for path in nx.all_simple_paths(graphique,\
+            for path in nx.all_simple_paths(graph,\
             source=noeud_depart, target=noeud_fin):
                 prep_contig = path
                 contig_ecrit = prep_contig[0]
@@ -112,24 +117,25 @@ def std(liste_valeurs):
 
 def path_average_weight(graph, chemin):
     """Cette fonction permet de retourner le poids moyen d'un
-    chemin."""
+    chemin.
+    """
     poids = 0
     nbre_edges = 0
     edges = graph.subgraph(chemin).edges(data=True)
     #On va récupérer les poids de chaque lien.
-    for u, v, e in edges:
-        poids += e['weight']
+    for u_value, v_value, e_value in edges:
+        poids += e_value['weight']
         nbre_edges += 1
     poids = poids/nbre_edges
     return poids
 
 def remove_paths(graph, liste_chemins, delete_entry_node=False, delete_sink_node=False):
-    """Fonction qui va permettre de nettoyer le graphique de chemins
+    """Fonction qui va permettre de nettoyer le graph de chemins
     indésirables.
 
     Pour chaque chemin on vérifie si on enlève ou non les noeuds initiaux
     et terminaux.
-    Ensuite on enlève les noeuds un par un en vérifiant au préalable que 
+    Ensuite on enlève les noeuds un par un en vérifiant au préalable que
     le noeud est présent.
     """
     for chemin in liste_chemins:
@@ -206,28 +212,29 @@ poids_moyen, delete_entry_node=False, delete_sink_node=False):
     graph = remove_paths(graph, a_retirer, delete_entry_node, delete_sink_node)
     return graph
 
-def find_bubbles(graphique):
+def find_bubbles(graph):
     """Fonction qui va permettre de trouver les bulles au sein
     de l'arbre. Elle retournera les origines et les fins de ces
-    bulles."""
+    bulles.
+    """
     bulles = []
-    ensemble_noeuds = list(graphique.nodes)
+    ensemble_noeuds = list(graph.nodes)
     for i in range(len(ensemble_noeuds)):
-        #On recherche si un noeud a plusieurs successeurs.
-        if len(list(graphique.successors(ensemble_noeuds[i]))) > 1:
+    #On recherche si un noeud a plusieurs successeurs.
+        if len(list(graph.successors(ensemble_noeuds[i]))) > 1:
             debut = ensemble_noeuds[i]
             #print("le noeud est:{}".format(ensemble_noeuds[i]))
             j = 0
             fin = ""
             #Si oui, on recherche le prochain noeud qui a plusieurs
             #prédécesseurs.
-            #Tant qu'il n'y a qu'un predecesseur et que j est plus petit 
+            #Tant qu'il n'y a qu'un predecesseur et que j est plus petit
             #que le nombre de noeuds "restants" on test si un noeud a plus
             #d'un predecesseur; ce qui permettrait d'encadrer la bulle
-            while len(list(graphique.predecessors(ensemble_noeuds[i+j]))) == 1\
-            and j < len(ensemble_noeuds)-i:
+            while len(list(graph.predecessors(ensemble_noeuds[i+j]))) == 1\
+            and j < (len(ensemble_noeuds)-i):
                 j += 1
-                if len(list(graphique.predecessors(ensemble_noeuds[i+j]))) > 1:
+                if len(list(graph.predecessors(ensemble_noeuds[i+j]))) > 1:
                     #print(j)
                     fin = ensemble_noeuds[i+j]
                     #print(fin)
@@ -236,46 +243,48 @@ def find_bubbles(graphique):
             if fin != "":
                 bulles.append([debut, fin])
     #On retourne les coordonnées qui encadrent les bulles.
-    return bulles      
+    return bulles
 
-def solve_bubble(graphique, debut, fin):
-    """Fonction permettant de nettoyer le graphique de résoudre
-    la bulle contenue entre les deux bornes."""
+
+
+def solve_bubble(graph, debut, fin):
+    """Fonction permettant de nettoyer le graph de résoudre
+    la bulle contenue entre les deux bornes.
+    """
     ensemble_chemins = []
-    for path in nx.all_simple_paths(graphique,\
+    for path in nx.all_simple_paths(graph,\
     source=debut, target=fin):
         ensemble_chemins.append(path)
     poids_moyen = []
     for chemin in ensemble_chemins:
-        poids_moyen.append(path_average_weight(graphique, chemin))
+        poids_moyen.append(path_average_weight(graph, chemin))
     ensemble_longueurs = []
     for chemin in ensemble_chemins:
         ensemble_longueurs.append(len(chemin))
-    graphique = select_best_path(graphique, ensemble_chemins,\
+    graph = select_best_path(graph, ensemble_chemins,\
     ensemble_longueurs, poids_moyen, delete_entry_node=False,\
     delete_sink_node=False)
-    return graphique
+    return graph
 
-def simplify_bubbles(graphique):
-    """Fonction permettant de nettoyer le graphique de toutes
-    les éventuelles bulles présentes dans le graphique."""
-    liste_bulles = find_bubbles(graphique)
+def simplify_bubbles(graph):
+    """Fonction permettant de nettoyer le graph de toutes
+    les éventuelles bulles présentes dans le graph."""
+    liste_bulles = find_bubbles(graph)
     for bulle in liste_bulles:
-        graphique = solve_bubble(graphique, bulle[0], bulle[1])
+        graph = solve_bubble(graph, bulle[0], bulle[1])
 
-    return graphique
+    return graph
 
-def solve_entry_tips(graphique, entrees):
-    """Fonction qui permet d'enlever les entrées indésirables
-    """
+def solve_entry_tips(graph, entrees):
+    """Fonction qui permet d'enlever les entrées indésirables."""
     print(entrees)
     bornes_initiales = []
-    ensemble_noeuds = list(graphique.nodes)
     #On cherche les noeuds avec des intersections en partant du début
     for noeuds_entree in entrees:
+        ensemble_noeuds = list(graph.nodes)
         fin = ""
         for i in range(len(ensemble_noeuds)):
-            if len(list(graphique.predecessors(ensemble_noeuds[i]))) > 1:
+            if len(list(graph.predecessors(ensemble_noeuds[i]))) > 1:
                 fin = ensemble_noeuds[i]
         if fin != "":
             bornes_initiales.append([noeuds_entree, fin])
@@ -285,26 +294,26 @@ def solve_entry_tips(graphique, entrees):
     poids_moyen = []
     ensemble_longueurs = []
     for borne in bornes_initiales:
-        for path in nx.all_simple_paths(graphique,\
+        for path in nx.all_simple_paths(graph,\
                 source=borne[0], target=borne[1]):
             ensemble_chemins.append(path)
-            poids_moyen.append(path_average_weight(graphique, path))
+            poids_moyen.append(path_average_weight(graph, path))
             ensemble_longueurs.append(len(path))
-    #Nettoyage du graphique
-    graphique = select_best_path(graphique, ensemble_chemins,\
+    #Nettoyage du graph
+    graph = select_best_path(graph, ensemble_chemins,\
     ensemble_longueurs, poids_moyen, delete_entry_node=True,\
     delete_sink_node=False)
-    return graphique
+    return graph
 
-def solve_out_tips(graphique, sorties):
+def solve_out_tips(graph, sorties):
     """Fonction qui permet d'enlever les entrées indésirables"""
     #établissement des bornes de chemins de sortie.
     bornes_initiales = []
-    ensemble_noeuds = list(graphique.nodes)
     for noeuds_sortie in sorties:
+        ensemble_noeuds = list(graph.nodes)
         debut = ""
         for i in range(len(ensemble_noeuds)):
-            if len(list(graphique.successors(ensemble_noeuds[i]))) > 1:
+            if len(list(graph.successors(ensemble_noeuds[i]))) > 1:
                 debut = ensemble_noeuds[i]
         if debut != "":
             bornes_initiales.append([debut, noeuds_sortie])
@@ -313,21 +322,22 @@ def solve_out_tips(graphique, sorties):
     poids_moyen = []
     ensemble_longueurs = []
     for borne in bornes_initiales:
-        for path in nx.all_simple_paths(graphique,\
+        for path in nx.all_simple_paths(graph,\
                 source=borne[0], target=borne[1]):
             ensemble_chemins.append(path)
-            poids_moyen.append(path_average_weight(graphique, path))
+            poids_moyen.append(path_average_weight(graph, path))
             ensemble_longueurs.append(len(path))
-    #Nettoyage du graphique
-    graphique = select_best_path(graphique, ensemble_chemins,\
+    #Nettoyage du graph
+    graph = select_best_path(graph, ensemble_chemins,\
     ensemble_longueurs, poids_moyen, delete_entry_node=False,\
     delete_sink_node=True)
-    return graphique
+    return graph
 
 #Définition de la fonction Main
 def main():
     """La fonction main() correspond à ce qui sera executé si le code
-    source est lancé"""
+    source est lancé.
+    """
     parser = argparse.ArgumentParser(prog='debruij.py',\
     description='Assembleur de séquence basé sur la méthode de De Bruij.')
     parser.add_argument('--i', type=str, help='fichier fastq, single end')
@@ -349,45 +359,46 @@ def main():
             liste_kmers.append(kmers)
 
     occurrence_kmers = build_kmer_dict(args.i, args.k)
-    graphique = build_graph(occurrence_kmers)
-    #debuts = get_starting_nodes(graphique)
-    #fins = get_sink_nodes(graphique)
-    #liste_contigs = get_contigs(graphique, debuts, fins)
+    graph = build_graph(occurrence_kmers)
+    #debuts = get_starting_nodes(graph)
+    #fins = get_sink_nodes(graph)
+    #liste_contigs = get_contigs(graph, debuts, fins)
     #save_contigs(liste_contigs, "Export_contigs.fna")
 
-    graphique = simplify_bubbles(graphique)
-    #print(len(graphique.nodes))
+    graph = simplify_bubbles(graph)
+    #print(len(graph.nodes))
 
-    #debuts = get_starting_nodes(graphique)
-    #fins = get_sink_nodes(graphique)
-    #liste_contigs = get_contigs(graphique, debuts, fins)
+    #debuts = get_starting_nodes(graph)
+    #fins = get_sink_nodes(graph)
+    #liste_contigs = get_contigs(graph, debuts, fins)
     #save_contigs(liste_contigs, "Inter.fna")
 
     #recherche des entrées indésirables.
-    noeuds_entree = get_starting_nodes(graphique)
+    noeuds_entree = get_starting_nodes(graph)
     while len(noeuds_entree) > 1:
-        graphique = solve_entry_tips(graphique, noeuds_entree)
-        noeuds_entree = get_starting_nodes(graphique)
-    noeuds_entree = get_starting_nodes(graphique)
-    
-    noeuds_terminaux = get_sink_nodes(graphique)
+        graph = solve_entry_tips(graph, noeuds_entree)
+        noeuds_entree = get_starting_nodes(graph)
+    noeuds_entree = get_starting_nodes(graph)
+
+    noeuds_terminaux = get_sink_nodes(graph)
     while len(noeuds_terminaux) > 1:
-        graphique = solve_out_tips(graphique, noeuds_terminaux)
-        noeuds_terminaux = get_sink_nodes(graphique)
-    noeuds_terminaux = get_sink_nodes(graphique)
+        graph = solve_out_tips(graph, noeuds_terminaux)
+        noeuds_terminaux = get_sink_nodes(graph)
+    noeuds_terminaux = get_sink_nodes(graph)
     #print("#####")
-    final_contig = get_contigs(graphique, noeuds_entree, noeuds_terminaux)
-    #graphique = simplify_bubbles(graphique)
-    #for noeud in graphique.nodes:
-    #    if len(list(graphique.predecessors(noeud))) > 1:
+    graph = simplify_bubbles(graph)
+    #for noeud in graph.nodes:
+    #    if len(list(graph.predecessors(noeud))) > 1:
     #        print("Il y a un petiot ici {}".format(noeud))
-    #        graphique = simplify_bubbles(graphique)
+    #        graph = simplify_bubbles(graph)
+    final_contig = get_contigs(graph, noeuds_entree, noeuds_terminaux)
     print("\n\n\nIl reste {} noeuds d'entrée.".format(len(noeuds_entree)))
     print("Il reste {} noeuds de sortie.".format(len(noeuds_terminaux)))
     print("Cela amène à {} contigs généré(s).".format(len(final_contig)))
     if len(final_contig) > 1:
         print(".\n..\n...\nMalheureusement ... :'(")
     save_contigs(final_contig, "Final.fna")
-###Si fichier lancé on execute la boucle main.
+
+#Si fichier lancé on execute la boucle main.
 if __name__ == "__main__":
     main()
