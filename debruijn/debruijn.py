@@ -224,24 +224,26 @@ def find_bubbles(graph):
         if len(list(graph.successors(ensemble_noeuds[i]))) > 1:
             debut = ensemble_noeuds[i]
             #print("le noeud est:{}".format(ensemble_noeuds[i]))
-            j = 0
+            j = 1
             fin = ""
             #Si oui, on recherche le prochain noeud qui a plusieurs
             #prédécesseurs.
             #Tant qu'il n'y a qu'un predecesseur et que j est plus petit
             #que le nombre de noeuds "restants" on test si un noeud a plus
             #d'un predecesseur; ce qui permettrait d'encadrer la bulle
-            while len(list(graph.predecessors(ensemble_noeuds[i+j]))) == 1\
-            and j < (len(ensemble_noeuds)-i):
-                j += 1
+            fin_trouvee = False
+            while fin_trouvee == False and j < (len(ensemble_noeuds)-i):
                 if len(list(graph.predecessors(ensemble_noeuds[i+j]))) > 1:
                     #print(j)
                     fin = ensemble_noeuds[i+j]
                     #print(fin)
+                    fin_trouvee = True
+                j += 1
             #Si on a récupéré un noeud qui a des successeurs et un noeud
             #qui a des prédécesseurs on récupère les coordonnées.
             if fin != "":
                 bulles.append([debut, fin])
+    print(bulles)
     #On retourne les coordonnées qui encadrent les bulles.
     return bulles
 
@@ -255,15 +257,17 @@ def solve_bubble(graph, debut, fin):
     for path in nx.all_simple_paths(graph,\
     source=debut, target=fin):
         ensemble_chemins.append(path)
-    poids_moyen = []
-    for chemin in ensemble_chemins:
-        poids_moyen.append(path_average_weight(graph, chemin))
-    ensemble_longueurs = []
-    for chemin in ensemble_chemins:
-        ensemble_longueurs.append(len(chemin))
-    graph = select_best_path(graph, ensemble_chemins,\
-    ensemble_longueurs, poids_moyen, delete_entry_node=False,\
-    delete_sink_node=False)
+    print(ensemble_chemins)
+    if len(ensemble_chemins) >= 2 and isinstance(ensemble_chemins[1], list):
+        poids_moyen = []
+        ensemble_longueurs = []
+        for chemin in ensemble_chemins:
+            poids_moyen.append(path_average_weight(graph, chemin))
+            ensemble_longueurs.append(len(chemin))
+        print(poids_moyen)
+        graph = select_best_path(graph, ensemble_chemins,\
+        ensemble_longueurs, poids_moyen, delete_entry_node=False,\
+        delete_sink_node=False)
     return graph
 
 def simplify_bubbles(graph):
@@ -271,7 +275,8 @@ def simplify_bubbles(graph):
     les éventuelles bulles présentes dans le graph."""
     liste_bulles = find_bubbles(graph)
     for bulle in liste_bulles:
-        graph = solve_bubble(graph, bulle[0], bulle[1])
+        if bulle[0] in graph.nodes and bulle[1] in graph.nodes:
+            graph = solve_bubble(graph, bulle[0], bulle[1])
 
     return graph
 
