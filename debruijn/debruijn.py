@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*-
 """Ce programme va permettre d'assembler des reads.
 
@@ -402,6 +401,8 @@ def main():
     print("Cela amène à {} contigs généré(s).".format(len(final_contig)))
     if len(final_contig) > 1:
         print(".\n..\n...\nMalheureusement ... :'(")
+    else:
+        print(".\n..\n...\nOn y est !!! :D")
     save_contigs(final_contig, "Final.fna")
 
 #Si fichier lancé on execute la boucle main.
