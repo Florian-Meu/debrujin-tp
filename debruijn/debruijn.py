@@ -258,7 +258,7 @@ def solve_bubble(graph, debut, fin):
     source=debut, target=fin):
         ensemble_chemins.append(path)
     print(ensemble_chemins)
-    if len(ensemble_chemins) >= 2 and isinstance(ensemble_chemins[1], list):
+    if len(ensemble_chemins) >= 2 and type(ensemble_chemins[1]) is list:
         poids_moyen = []
         ensemble_longueurs = []
         for chemin in ensemble_chemins:
