@@ -3,14 +3,15 @@
 """Ce programme va permettre d'assembler des reads.
 
 Pour se faire, la méthode des graphs de De Bruijn sera utilisée.
+Ce fichier comporte la globalité des fonctions définies.
 """
 
 ### Import des modules
 import argparse
 import os
 import statistics
-import matplotlib.pyplot as plt
 import random
+#import matplotlib.pyplot as plt
 import networkx as nx
 
 ### Liste des fonctions.
@@ -140,7 +141,7 @@ def remove_paths(graph, liste_chemins, delete_entry_node=False, delete_sink_node
             for noeud in chemin[:-1]:
                 if noeud in graph.nodes:
                     graph.remove_node(noeud)
-        elif delete_entry_node==False and delete_sink_node:
+        elif delete_entry_node == False and delete_sink_node:
             for noeud in chemin[1:]:
                 if noeud in graph.nodes:
                     graph.remove_node(noeud)
@@ -166,33 +167,43 @@ poids_moyen, delete_entry_node=False, delete_sink_node=False):
     a_retirer = []
     taille_max = max(poids_moyen)
     chemin_fort_poids = []
+    #On recherche les chemins qui ont un poids correspondant
+    #au poids maximum (de préférence un seul ...)
     for i in range(len(ensemble_chemins)):
         if poids_moyen[i] == taille_max:
             chemin_fort_poids.append(ensemble_chemins[i])
+    #On récupère les chemins à conserver puis on ajoute
+    #les autres à la liste "a_retirer"
     for chemin in chemin_fort_poids:
         ensemble_chemins.remove(chemin)
     a_retirer = ensemble_chemins + a_retirer
-    if len(chemin_fort_poids) == 1:
-        graph = remove_paths(graph, a_retirer, delete_entry_node, delete_sink_node)
-    else:
+    #S'il y a plus qu'un chemin qui a le poids maximum on regarde
+    #la taille de ceux le poids maximum.
+    if len(chemin_fort_poids) > 1:
         longueur_max = max(ensemble_longueurs)
         grands_chemins = []
         for i in range(len(chemin_fort_poids)):
             if ensemble_longueurs[i] == longueur_max:
                 grands_chemins.append(chemin_fort_poids[i])
+        #On récupère les chemins à conserver puis on ajoute
+        #les autres à la liste "a_retirer"
         for chemin in grands_chemins:
             chemin_fort_poids.remove(chemin)
         a_retirer = chemin_fort_poids + a_retirer
-        if len(grands_chemins) == 1:
-            graph = remove_paths(graph, a_retirer, delete_entry_node, delete_sink_node)
-        else:
+        #S'il y a plusieurs chemins qui ont la taille maximum
+        #on tire un chemin au hasard parmis ceux ayant le poids
+        #maximum et la plus grande taille.
+        if len(grands_chemins) > 1:
             random.seed(9001)
             choix = random.randint(0, len(grands_chemins))
             print(choix)
             choix_chemin = grands_chemins[choix]
+            #On récupère les chemins à conserver puis on ajoute
+            #les autres à la liste "a_retirer"
             grands_chemins.remove(choix_chemin[0])
             a_retirer = grands_chemins + a_retirer
-            graph = remove_paths(graph, a_retirer, delete_entry_node, delete_sink_node)
+    #On enlève tous les chemins qui ont été ajoutés à la liste "a_retirer"
+    graph = remove_paths(graph, a_retirer, delete_entry_node, delete_sink_node)
     return graph
 
 def find_bubbles(graphique):
@@ -202,24 +213,29 @@ def find_bubbles(graphique):
     bulles = []
     ensemble_noeuds = list(graphique.nodes)
     for i in range(len(ensemble_noeuds)):
+        #On recherche si un noeud a plusieurs successeurs.
         if len(list(graphique.successors(ensemble_noeuds[i]))) > 1:
             debut = ensemble_noeuds[i]
-            print("le noeud est:{}".format(ensemble_noeuds[i]))
+            #print("le noeud est:{}".format(ensemble_noeuds[i]))
             j = 0
             fin = ""
+            #Si oui, on recherche le prochain noeud qui a plusieurs
+            #prédécesseurs.
             #Tant qu'il n'y a qu'un predecesseur et que j est plus petit 
-            #que le nombre de noeuds restants on test si un noeud a plus
+            #que le nombre de noeuds "restants" on test si un noeud a plus
             #d'un predecesseur; ce qui permettrait d'encadrer la bulle
             while len(list(graphique.predecessors(ensemble_noeuds[i+j]))) == 1\
             and j < len(ensemble_noeuds)-i:
                 j += 1
                 if len(list(graphique.predecessors(ensemble_noeuds[i+j]))) > 1:
-                    print(j)
-                    print("ici")
+                    #print(j)
                     fin = ensemble_noeuds[i+j]
-                    print(fin)
+                    #print(fin)
+            #Si on a récupéré un noeud qui a des successeurs et un noeud
+            #qui a des prédécesseurs on récupère les coordonnées.
             if fin != "":
                 bulles.append([debut, fin])
+    #On retourne les coordonnées qui encadrent les bulles.
     return bulles      
 
 def solve_bubble(graphique, debut, fin):
@@ -255,6 +271,7 @@ def solve_entry_tips(graphique, entrees):
     print(entrees)
     bornes_initiales = []
     ensemble_noeuds = list(graphique.nodes)
+    #On cherche les noeuds avec des intersections en partant du début
     for noeuds_entree in entrees:
         fin = ""
         for i in range(len(ensemble_noeuds)):
@@ -283,8 +300,8 @@ def solve_out_tips(graphique, sorties):
     """Fonction qui permet d'enlever les entrées indésirables"""
     #établissement des bornes de chemins de sortie.
     bornes_initiales = []
+    ensemble_noeuds = list(graphique.nodes)
     for noeuds_sortie in sorties:
-        ensemble_noeuds = list(graphique.nodes)
         debut = ""
         for i in range(len(ensemble_noeuds)):
             if len(list(graphique.successors(ensemble_noeuds[i]))) > 1:
@@ -307,7 +324,7 @@ def solve_out_tips(graphique, sorties):
     delete_sink_node=True)
     return graphique
 
-###Définition de la fonction Main
+#Définition de la fonction Main
 def main():
     """La fonction main() correspond à ce qui sera executé si le code
     source est lancé"""
@@ -358,11 +375,17 @@ def main():
         graphique = solve_out_tips(graphique, noeuds_terminaux)
         noeuds_terminaux = get_sink_nodes(graphique)
     noeuds_terminaux = get_sink_nodes(graphique)
-
+    #print("#####")
     final_contig = get_contigs(graphique, noeuds_entree, noeuds_terminaux)
-    print(len(noeuds_entree))
-    print(len(noeuds_terminaux))
-    print(len(final_contig))
+    #graphique = simplify_bubbles(graphique)
+    #for noeud in graphique.nodes:
+    #    if len(list(graphique.predecessors(noeud))) > 1:
+    #        print("Il y a un petiot ici {}".format(noeud))
+    print("\n\n\nIl reste {} noeuds d'entrée.".format(len(noeuds_entree)))
+    print("Il reste {} noeuds de sortie.".format(len(noeuds_terminaux)))
+    print("Cela amène à {} contigs généré(s).".format(len(final_contig)))
+    if len(final_contig) > 1:
+        print(".\n..\n...\nMalheureusement ... :'(")
     save_contigs(final_contig, "Final.fna")
 ###Si fichier lancé on execute la boucle main.
 if __name__ == "__main__":
