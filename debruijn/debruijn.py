@@ -1,3 +1,5 @@
+
+# -*- coding: utf-8 -*-
 """Ce programme va permettre d'assembler des reads.
 
 Pour se faire, la méthode des graphs de De Bruijn sera utilisée.
@@ -104,33 +106,127 @@ def std(liste_valeurs):
     return statistics.stdev(liste_valeurs)
 
 
-def path_average_weight():
-    pass
+def path_average_weight(graph, chemin):
+    """Cette fonction permet de retourner le poids moyen d'un
+    chemin."""
+    poids=0
+    nbre_edges=0
+    edges=graph.subgraph(chemin).edges(data=True)
+    for u, v, e in edges:
+        poids+=e['weight']
+        nbre_edges+=1
+    poids=poids/nbre_edges
+    #print(poids)
+    return poids
 
-def remove_paths(graph, liste_chemins,delete_entry_node=False, delete_sink_node=False):
+def remove_paths(graph, liste_chemins, delete_entry_node=False, delete_sink_node=False):
     """Fonction qui va permettre de nettoyer le graphique de chemins
     indésirables."""
-    
-    pass
+    for chemin in liste_chemins:
+        if delete_entry_node==False and delete_sink_node==False :
+            for noeud in chemin[1:-1]:
+                if noeud in graph.nodes:
+                    graph.remove_node(noeud)
+        elif delete_entry_node==True and delete_sink_node==False :
+            for noeud in chemin[:-1]:
+                if noeud in graph.nodes:
+                    graph.remove_node(noeud)
+        elif delete_entry_node==False and delete_sink_node==True :
+            for noeud in chemin[1:]:
+                if noeud in graph.nodes:
+                    graph.remove_node(noeud)
+        elif delete_entry_node==True and delete_sink_node==True :
+            for noeud in chemin[:]:
+                if noeud in graph.nodes:
+                    graph.remove_node(noeud)
+    return graph
 
-def select_best_path():
-    pass
+def select_best_path(graph, ensemble_chemins, ensemble_longueurs, poids_moyen, delete_entry_node=False, delete_sink_node=False):
+    """Fonction qui va permettre d'identifier le meilleur chemin."""
+    while len(ensemble_chemins) > 1 :
+        print(ensemble_chemins)
+        a_retirer = []
+        taille_max=max(poids_moyen)
+        chemin_fort_poids = []
+        for i in range(len(ensemble_chemins)):
+            if poids_moyen[i]==taille_max:
+                chemin_fort_poids.append(ensemble_chemins[i])
+        for chemin in chemin_fort_poids:
+            ensemble_chemins.remove(chemin)
+        a_retirer = ensemble_chemins + a_retirer
+        if len(chemin_fort_poids)==1:
+            print(chemin_fort_poids)
+            graph = remove_paths(graph, a_retirer, delete_entry_node=delete_entry_node, delete_sink_node=delete_sink_node)
+        else :
+            longueur_max = max(ensemble_longueurs)
+            grands_chemins = []
+            for i in range(len(chemin_fort_poids)):
+                if ensemble_longueurs[i]==longueur_max:
+                    grands_chemins.append(chemin_fort_poids[i])
+            for chemin in grands_chemins:
+                chemin_fort_poids.remove(chemin)
+            a_retirer = chemin_fort_poids + a_retirer
+            if len(grands_chemins)==1:
+                print(grands_chemins)
+                graph = remove_paths(graph, a_retirer, delete_entry_node=delete_entry_node, delete_sink_node=delete_sink_node)
+            else :
+                random.seed(9001)
+                choix=random.randint(0,len(grands_chemins))
+                ensemble_chemins=grands_chemins[choix]
+                grands_chemins.remove(ensemble_chemins)
+                a_retirer = grands_chemins + a_retirer
+                print(ensemble_chemins)
+                graph = remove_paths(graph, a_retirer, delete_entry_node=delete_entry_node, delete_sink_node=delete_sink_node)
+    return graph
 
-def solve_bubble(graphique):
-    """Fonction permettant de nettoyer le graphique de tous
-    les éventuels noeuds présents dans le graphique."""
-    debuts = get_starting_nodes(graphique)
-    fins = get_sink_nodes(graphique)
-    ensemble_chemins = get_contigs(graphique)
-    poids_moyen=[]
+def find_bubbles(graphique):
+    """Fonction qui va permettre de trouver les bulles au sein
+    de l'arbre. Elle retournera les origines et les fins de ces
+    bulles."""
+    bulles = []
+    ensemble_noeuds = list(graphique.nodes)
+    #print(ensemble_noeuds)
+    for i in range(len(ensemble_noeuds)):
+        #print(ensemble_noeuds)
+        if len(list(graphique.successors(ensemble_noeuds[i])))>1:
+            debut = ensemble_noeuds[i]
+            j = 0
+            fin = ""
+            while len(list(graphique.predecessors(ensemble_noeuds[i+j])))==1 and j<len(ensemble_noeuds)-i:
+                j+=1
+                if len(list(graphique.predecessors(ensemble_noeuds[i+j])))>1:
+                    fin = ensemble_noeuds[i+j]
+            if fin!="":
+                bulles.append([debut, fin])
+    return bulles      
 
+def solve_bubble(graphique,debut,fin):
+    """Fonction permettant de nettoyer le graphique de résoudre
+    la bulle contenue entre les deux bornes."""
+    ensemble_chemins = []
+    for path in nx.all_simple_paths(graphique,\
+            source=debut, target = fin):
+                ensemble_chemins.append(path)
+    poids_moyen = []
     for chemin in ensemble_chemins:
         poids_moyen.append(path_average_weight(graphique,chemin))
+    #ecarttype = std(poids_moyen)
+    ensemble_longueurs = []
+    for chemin in ensemble_chemins:
+        ensemble_longueurs.append(len(chemin))
+    graphique = select_best_path(graphique, ensemble_chemins, ensemble_longueurs, poids_moyen, delete_entry_node=False, delete_sink_node=False)
+    return graphique
 
-    ecarttype = std(poids_moyen)
+def simplify_bubbles(graphique):
+    """Fonction permettant de nettoyer le graphique de toutes
+    les éventuelles bulles présentes dans le graphique."""
+    liste_bulles = find_bubbles(graphique)
+    #print(liste_bulles)
 
-def simplify_bubbles():
-    pass
+    for bulle in liste_bulles:
+        graphique = solve_bubble(graphique,bulle[0],bulle[1])
+
+    return graphique
 
 def solve_entry_tips():
     pass
@@ -148,7 +244,7 @@ def main():
     description='Assembleur de séquence basé sur la méthode de De Bruij.')
     parser.add_argument('--i', type = str, help='fichier fastq, single end')
     parser.add_argument('--k', type = int, default = 21,\
-    help='taille des kmer (optionnel - par defaut:21)')
+    help='taille des kmer (optionnel - par defaut : 21)')
     parser.add_argument('--r', type = str, default='')
     args = parser.parse_args()
 
@@ -178,7 +274,8 @@ def main():
     #print(liste_contigs)
 
     save_contigs(liste_contigs, "Export_contigs.fna")
-
+    
+    graphique = simplify_bubbles(graphique)
 
 ###Si fichier lancé on execute la boucle main.
 if __name__ == "__main__":
